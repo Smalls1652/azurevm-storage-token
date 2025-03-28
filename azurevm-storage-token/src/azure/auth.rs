@@ -46,8 +46,8 @@ pub struct AccessTokenResponse {
 /// ## Arguments
 ///
 /// * `resource` - The resource(s) that the access token is for.
-pub async fn get_managed_identity_token(resource: &str) -> Result<AccessTokenResponse, Error> {
-    let http_client = reqwest::Client::builder()
+pub fn get_managed_identity_token(resource: &str) -> Result<AccessTokenResponse, Error> {
+    let http_client = reqwest::blocking::Client::builder()
         .user_agent("AzTokenRetriever")
         .use_rustls_tls()
         .build()
@@ -65,10 +65,8 @@ pub async fn get_managed_identity_token(resource: &str) -> Result<AccessTokenRes
         .get(url)
         .header("Metadata", "true")
         .send()
-        .await
         .map_err(|e| Error::HttpRequestError(e))?
         .json::<AccessTokenResponse>()
-        .await
         .map_err(|e| Error::HttpRequestError(e))?;
 
     Ok(token_response)

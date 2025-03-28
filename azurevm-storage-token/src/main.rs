@@ -28,41 +28,23 @@ struct CliArgs {
 ///
 /// * `storage_account_name` - The name of the Azure storage account.
 /// * `container_name` - The name of the blob container.
-async fn get_storage_account_token(
+fn get_storage_account_token(
     storage_account_name: &str,
     container_name: &str,
-) -> Result<(), Error> {
+) -> Result<String, Error> {
     let storage_account_url = format!("https://{}.blob.core.windows.net", storage_account_name);
 
-    let access_token = get_managed_identity_token(&storage_account_url).await?;
+    let access_token = get_managed_identity_token(&storage_account_url)?;
 
-    let user_delegation_key = get_user_delegation_key(&access_token, storage_account_name).await?;
+    let user_delegation_key = get_user_delegation_key(&access_token, storage_account_name)?;
 
     let sas_token = user_delegation_key.to_sas_token(storage_account_name, container_name)?;
 
-    println!("{}", sas_token);
-
-    Ok(())
+    Ok(sas_token)
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let supplied_arguments = CliArgs::parse();
-
-    // Set up unbounded channels for shutdown and error signals.
-    let (shutdown_send, mut shutdown_recv) = tokio::sync::mpsc::unbounded_channel();
-    let (core_sig_error_send, mut core_sig_error_recv) = tokio::sync::mpsc::unbounded_channel();
-
-    // Set up signal handlers for SIGTERM and SIGQUIT.
-    #[cfg(target_family = "unix")]
-    let mut sig_term = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
-    #[cfg(target_family = "unix")]
-    let mut sig_quit = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::quit())?;
-
-    #[cfg(target_family = "windows")]
-    let mut sig_term = tokio::signal::windows::ctrl_c()?;
-    #[cfg(target_family = "windows")]
-    let mut sig_quit = tokio::signal::windows::ctrl_shutdown()?;
 
     tracing_subscriber::fmt()
         .compact()
@@ -79,55 +61,24 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    tokio::spawn(async move {
-        let result = get_storage_account_token(
-            &supplied_arguments.storage_account_name,
-            &supplied_arguments.container_name,
-        )
-        .await;
+    let token_result = get_storage_account_token(
+        &supplied_arguments.storage_account_name,
+        &supplied_arguments.container_name,
+    );
 
-        match result {
-            Ok(_) => {
-                tracing::debug!("Execution finished successfully");
-                std::process::exit(0);
-            }
+    match token_result {
+        Ok(token) => {
+            tracing::debug!("Execution finished successfully");
+            
+            println!("{}", token);
 
-            Err(e) => {
-                tracing::error!("Execution failed: {}", e);
-
-                core_sig_error_send.send(()).unwrap();
-            }
+            Ok(())
         }
-    });
 
-    // Wait for signals to be received.
-    tokio::select! {
-        _ = tokio::signal::ctrl_c() => {
-            tracing::warn!("Received Ctrl+C, shutting down...");
-            shutdown_send.send(()).unwrap();
-        },
+        Err(e) => {
+            tracing::error!("Execution failed: {}", e);
 
-        _ = core_sig_error_recv.recv() => {
-            tracing::error!("An error occurred. Shutting down...");
-            shutdown_send.send(()).unwrap();
-        },
-
-        _ = sig_term.recv() => {
-            tracing::warn!("Received SIGTERM, shutting down...");
-            shutdown_send.send(()).unwrap();
-        },
-
-        _ = sig_quit.recv() => {
-            tracing::warn!("Received SIGQUIT, shutting down...");
-            shutdown_send.send(()).unwrap();
-        },
-
-        _ = shutdown_recv.recv() => {
-            tracing::debug!("Received shutdown signal, shutting down...");
-
-            return Ok(());
+            std::process::exit(1);
         }
     }
-
-    Ok(())
 }

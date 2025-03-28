@@ -169,7 +169,7 @@ c
 ///
 /// * `access_token` - The access token for the request.
 /// * `storage_account_name` - The name of the storage account.
-pub async fn get_user_delegation_key(
+pub fn get_user_delegation_key(
     access_token: &AccessTokenResponse,
     storage_account_name: &str,
 ) -> Result<UserDelegationKey, Error> {
@@ -182,7 +182,7 @@ pub async fn get_user_delegation_key(
     );
     default_http_headers.insert("x-ms-version", SERVICE_VERSION.parse().unwrap());
 
-    let http_client = reqwest::Client::builder()
+    let http_client = reqwest::blocking::Client::builder()
         .user_agent("AzTokenRetriever")
         .use_rustls_tls()
         .default_headers(default_http_headers)
@@ -204,10 +204,8 @@ pub async fn get_user_delegation_key(
         .header("Content-Type", "application/xml")
         .body(user_delegation_request_body)
         .send()
-        .await
         .map_err(|e| Error::HttpRequestError(e))?
         .text()
-        .await
         .map_err(|e| Error::HttpRequestError(e))?;
 
     let user_delegation_response =

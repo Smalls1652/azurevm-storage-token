@@ -1,0 +1,129 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow
+name: Build and test
+on:
+  push:
+    tags-ignore: [ 'v*.*.*', 'v*.*.*-*' ]
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  packages: read
+
+jobs:
+  fetch:
+    name: Fetch dependencies and cache
+    runs-on: ubuntu-latest
+
+    env:
+      CARGO_TERM_COLOR: always
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@b38f618be2096d3fc834d239085766ecdc8f4b62
+        with:
+          toolchain: stable
+          rustflags: ""
+          cache: true
+          shared-cache-key: "build"
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-make
+        shell: bash
+        run: | 
+          cargo binstall cargo-make --force
+
+      - name: Fetch dependencies
+        shell: bash
+        run: |
+          cargo fetch --locked --verbose
+
+      - name: Run cargo check
+        shell: bash
+        run: |
+          cargo check --workspace
+
+  test:
+    name: Test project
+    runs-on: ubuntu-latest
+    needs:
+      - fetch
+
+    env:
+      CARGO_TERM_COLOR: always
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@b38f618be2096d3fc834d239085766ecdc8f4b62
+        with:
+          toolchain: stable
+          rustflags: ""
+          cache: true
+          shared-cache-key: "build"
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-make
+        shell: bash
+        run: | 
+          cargo binstall cargo-make --force
+
+      - name: Test project
+        shell: bash
+        run: |
+          cargo make test
+
+  build:
+    name: Build project
+    runs-on: ubuntu-latest
+    needs:
+      fetch
+
+    env:
+      CARGO_TERM_COLOR: always
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dev libraries
+        shell: bash
+        run: |
+          sudo apt-get install -y libpq-dev libpq5 libsqlite3-dev libsqlite3-0
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@b38f618be2096d3fc834d239085766ecdc8f4b62
+        with:
+          toolchain: stable
+          rustflags: ""
+          cache: true
+          shared-cache-key: "build"
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-make
+        shell: bash
+        run: | 
+          cargo binstall cargo-make --force
+
+      - name: Build project
+        shell: bash
+        run: |
+          cargo make build
+  

@@ -8,6 +8,10 @@ package.repository = "https://github.com/Smalls1652/azurevm-storage-token"
 package.license = "MIT"
 package.edition = "2024"
 
+[profile.release]
+opt-level = "s"
+lto = true
+
 [workspace.dependencies]
 anyhow = { version = "1.0.97" }
 base64 = { version = "0.22.1" }

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::Error;
 
 /// The endpoint for an Azure Managed Identity to get an access token from.
-static MANAGED_IDENTITY_TOKEN_ENDPOINT: &str =
+const MANAGED_IDENTITY_TOKEN_ENDPOINT: &'static str =
     "http://169.254.169.254/metadata/identity/oauth2/token";
 
 /// The access token response from the Azure Managed Identity token endpoint.

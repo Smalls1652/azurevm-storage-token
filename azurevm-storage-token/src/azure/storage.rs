@@ -12,7 +12,7 @@ use crate::error::Error;
 
 use super::auth::AccessTokenResponse;
 
-static SERVICE_VERSION: &str = "2022-11-02";
+const SERVICE_VERSION: &'static str = "2022-11-02";
 
 /// The request body for getting the user delegation key.
 #[derive(Deserialize, Serialize, Debug, Clone)]

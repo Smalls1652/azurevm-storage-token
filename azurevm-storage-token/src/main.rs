@@ -4,7 +4,6 @@ mod azure;
 /// Contains error types.
 mod error;
 
-use anyhow::Result;
 use azure::{auth::get_managed_identity_token, storage::get_user_delegation_key};
 use clap::Parser;
 use error::Error;
@@ -43,7 +42,7 @@ fn get_storage_account_token(
     Ok(sas_token)
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Error> {
     let supplied_arguments = CliArgs::parse();
 
     tracing_subscriber::fmt()

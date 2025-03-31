@@ -1,7 +1,4 @@
-use base64::{
-    Engine,
-    engine::general_purpose::{self},
-};
+use base64::{Engine, engine::general_purpose};
 use chrono::{Duration, Utc};
 use hmac::{Hmac, KeyInit, Mac};
 use reqwest::header::HeaderMap;
@@ -15,7 +12,7 @@ use super::auth::AccessTokenResponse;
 const SERVICE_VERSION: &'static str = "2022-11-02";
 
 /// The request body for getting the user delegation key.
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename = "KeyInfo")]
 struct UserDelegationKeyRequest {
     /// The start time for the key.
@@ -45,7 +42,7 @@ impl UserDelegationKeyRequest {
 }
 
 /// The user delegation key for a storage account.
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename = "UserDelegationKey")]
 pub struct UserDelegationKey {
     #[serde(rename = "SignedOid")]

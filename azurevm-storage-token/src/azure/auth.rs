@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::error::Error;
 
@@ -7,7 +7,8 @@ const MANAGED_IDENTITY_TOKEN_ENDPOINT: &'static str =
     "http://169.254.169.254/metadata/identity/oauth2/token";
 
 /// The access token response from the Azure Managed Identity token endpoint.
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
+#[allow(dead_code)]
 pub struct AccessTokenResponse {
     /// The access token string that can be used to authenticate requests.
     #[serde(rename = "access_token")]

@@ -1,6 +1,7 @@
 use base64::{Engine, engine::general_purpose};
 use chrono::{Duration, Utc};
 use hmac::{Hmac, KeyInit, Mac};
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::header::HeaderMap;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
@@ -80,6 +81,7 @@ impl UserDelegationKey {
         container_name: &str,
     ) -> Result<String, Error> {
         let sas_signature = self.generate_sas_signature(storage_account_name, container_name)?;
+        let sas_signature = utf8_percent_encode(&sas_signature, NON_ALPHANUMERIC).to_string();
 
         let sas_token = format!(
             "sp=r&st={SignedStart}&se={SignedExpiry}&skoid={SignedOid}&sktid={SignedTid}&skt={SignedStart}&ske={SignedExpiry}&sks={SignedService}&skv={SignedVersion}&spr=https&sv={SignedVersion}&sr=c&sig={SignedSignature}",
